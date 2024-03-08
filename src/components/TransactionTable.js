@@ -5,10 +5,9 @@ import { useDebounce } from "./DebouncingHook";
 const TransactionTable = () => {
   const [transactions, setTransactions] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState("March");
-  const [searchText, setSearchText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const perPage = 10;
-
+  const [searchText, setSearchText] = useState("");
   const debouncedSearch = useDebounce(searchText, 500);
 
   useEffect(() => {
@@ -22,13 +21,28 @@ const TransactionTable = () => {
         {
           params: {
             month: selectedMonth,
-            search: debouncedSearch,
             page: currentPage,
             perPage: perPage,
           },
         }
       );
-      setTransactions(response.data.products);
+      let fetchedTransactions = response.data.products;
+
+      // Apply search functionality locally
+      if (debouncedSearch !== "") {
+        fetchedTransactions = fetchedTransactions.filter(
+          (transaction) =>
+            transaction.title
+              .toLowerCase()
+              .includes(debouncedSearch.toLowerCase()) ||
+            transaction.description
+              .toLowerCase()
+              .includes(debouncedSearch.toLowerCase()) ||
+            transaction.price.toString().includes(debouncedSearch)
+        );
+      }
+
+      setTransactions(fetchedTransactions);
     } catch (error) {
       console.error("Error fetching transactions:", error);
     }
@@ -53,7 +67,7 @@ const TransactionTable = () => {
     }
   };
 
-  console.log("curent page", currentPage);
+  console.log("current page", currentPage);
 
   return (
     <div
@@ -147,7 +161,7 @@ const TransactionTable = () => {
                     {transaction.sold ? "Yes" : "No"}
                   </td>
                   <td className="border border-gray-400 p-2">
-                    <img src={transaction.image} />
+                    <img src={transaction.image} alt="Transaction" />
                   </td>
                 </tr>
               ))}
